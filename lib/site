@@ -1,0 +1,69 @@
+#!/bin/sh
+set -e
+export -n CDPATH
+
+# Globally used functions
+
+escape_quotes() {
+  for line in "$@"; do
+    line=$(echo "$line" | sed -e "s/\\([\"\]\\)/\\\\\\1/g")
+    echo "\"""$line""\""
+  done
+}
+
+# Parse region specification
+
+if [ "$1" = "--region" ]; then
+  shift
+  export SITE_REGION="$1"
+  shift
+fi
+
+# Set up global variables
+
+export SITE_REGION=${SITE_REGION:=$(aws configure get region)}
+export SITE_PROJECT=${SITE_PROJECT:="project"}
+export SITE_ENVIRONMENT=${SITE_ENVIRONMENT:="development"}
+export SITE_PROGRAM_NAME=${SITE_PROGRAM_NAME:="site-manager"}
+export SITE_PUBLIC_KEY_FILE=${SITE_PUBLIC_KEY_FILE}
+
+# Set up cache (temporary files) directory
+
+MKTEMP=$(command -v gmktemp mktemp | head -1)
+if [ -z "$MKTEMP" ]; then
+  echo "mktemp could not be found. Please install GNU coreutils." >&2
+  exit 1
+fi
+
+if [ -z "$SITE_CACHE_DIR" ]; then
+  export SITE_TEMP_CACHE_DIR=1
+  export SITE_CACHE_DIR
+  SITE_CACHE_DIR="$(mktemp -d)"
+  trap 'rm -rf $SITE_CACHE_DIR' 0 2 3 15
+else
+  trap 'rm -f $SITE_CACHE_DIR/*' 0 2 3 15
+fi
+
+READLINK=$(command -v greadlink readlink | head -1)
+if [ -z "$READLINK" ]; then
+  echo "readlink could not be found. Please install GNU coreutils." >&2
+  exit 1
+fi
+
+bin_path="$($READLINK -f "$0" | xargs dirname)"
+export PATH="${bin_path}:${PATH}"
+
+case "$1" in
+  "" | "-h" | "--help" )
+    echo "Help not implemented yet"
+    ;;
+  * )
+    command_path="$(command -v "site-${1}" || true)"
+    if [ "$command_path" = "" ]; then
+      unset command_path
+    fi
+    if [ -n "${command_path+x}" ]; then
+      shift 1
+      exec "$command_path" "$@"
+    fi
+esac

@@ -1,0 +1,389 @@
+#!/bin/sh
+set -e
+export -n CDPATH
+
+printf "Creating new base in: "
+echo "$SITE_REGION"
+
+SITE_BASE_INSTANCE_FILE="${SITE_CACHE_DIR}/instance_data"
+SITE_BASE_VPC_FILE="${SITE_CACHE_DIR}/vpc_data"
+SITE_BASE_SUBNET_FILE="${SITE_CACHE_DIR}/subnet_data"
+SITE_BASE_KEY_PAIR_FILE="${SITE_CACHE_DIR}/key_pair_data"
+SITE_BASE_SECURITY_GROUP_FILE="${SITE_CACHE_DIR}/security_group_data"
+SITE_BASE_INTERNET_GATEWAY_FILE="${SITE_CACHE_DIR}/internet_gateway_data"
+SITE_BASE_ROUTE_TABLE_FILE="${SITE_CACHE_DIR}/route_table_data"
+
+aws_exec() {
+  aws --region "$SITE_REGION" "$@"
+}
+
+clear_base_security_group_information() {
+  rm -f "$SITE_BASE_SECURITY_GROUP_FILE"
+}
+
+request_base_security_group_information() {
+  aws_exec ec2 describe-security-groups \
+    --filter "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role,Values=base" \
+             "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment,Values=${SITE_ENVIRONMENT}" \
+             "Name=vpc-id,Values=$(get_vpc_info vpc_id)" \
+    --query "SecurityGroups[].GroupId" --output text
+}
+
+retrieve_base_security_group_information() {
+  if [ ! -f "$SITE_BASE_SECURITY_GROUP_FILE" ]; then
+    request_base_security_group_information > "${SITE_BASE_SECURITY_GROUP_FILE}"
+  fi
+  cat "${SITE_BASE_SECURITY_GROUP_FILE}"
+}
+
+get_security_group_info() {
+  case "$1" in
+    "group_id" )
+      retrieve_base_security_group_information
+      ;;
+  esac
+}
+
+clear_base_key_pair_information() {
+  rm -f "$SITE_BASE_KEY_PAIR_FILE"
+}
+
+request_key_pair_information() {
+  aws_exec ec2 describe-key-pairs \
+    --filter "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role,Values=base" \
+    --query "KeyPairs[].KeyName" --output text
+}
+
+retrieve_key_pair_information() {
+  if [ ! -f "$SITE_BASE_KEY_PAIR_FILE" ]; then
+    request_key_pair_information > "${SITE_BASE_KEY_PAIR_FILE}"
+  fi
+  cat "${SITE_BASE_KEY_PAIR_FILE}"
+}
+
+get_key_pair_info() {
+  case "$1" in
+    "key_name" )
+      retrieve_key_pair_information
+      ;;
+  esac
+}
+
+clear_base_instance_information() {
+  rm -f "$SITE_BASE_INSTANCE_FILE"
+}
+
+request_base_instance_information() {
+  aws_exec ec2 describe-instances \
+    --filter "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role,Values=base"\
+             "Name=subnet-id,Values=$(get_subnet_info subnet_id)"\
+    --query "Reservations[].Instances[].{InstanceId: InstanceId, VpcId: VpcId}" --output text
+}
+
+retrieve_base_instance_information() {
+  if [ ! -f "$SITE_BASE_INSTANCE_FILE" ]; then
+    request_base_instance_information > "${SITE_BASE_INSTANCE_FILE}"
+  fi
+  cat "${SITE_BASE_INSTANCE_FILE}"
+}
+
+get_base_instance_info() {
+  case "$1" in
+    "instance_id" )
+      retrieve_base_instance_information | cut -f1
+      ;;
+    "vpc_id" )
+      retrieve_base_instance_information | cut -f2
+      ;;
+  esac
+}
+
+clear_vpc_information() {
+  rm -f "$SITE_BASE_VPC_FILE"
+}
+
+request_vpc_information() {
+  aws_exec ec2 describe-vpcs \
+    --filter "Name=\"tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",
+              Values=${SITE_ENVIRONMENT}"\
+    --query "Vpcs[].[VpcId, State]" --output text
+}
+
+retrieve_vpc_information() {
+  if [ ! -f "$SITE_BASE_VPC_FILE" ]; then
+    request_vpc_information > "${SITE_BASE_VPC_FILE}"
+  fi
+  cat "${SITE_BASE_VPC_FILE}"
+}
+
+get_vpc_info() {
+  case "$1" in
+    "vpc_id" )
+      retrieve_vpc_information  | cut -f1
+      ;;
+    "state" )
+      retrieve_vpc_information  | cut -f2
+      ;;
+  esac
+}
+
+clear_subnet_information() {
+  rm -f "$SITE_BASE_SUBNET_FILE"
+}
+
+request_subnet_information() {
+  aws_exec ec2 describe-subnets \
+    --filter "Name=vpc-id,Values=\"$(get_vpc_info vpc_id)\""\
+    --query "Subnets[].[SubnetId, State]" --output text
+}
+
+retrieve_subnet_information() {
+  if [ ! -f "$SITE_BASE_SUBNET_FILE" ]; then
+    request_subnet_information > "$SITE_BASE_SUBNET_FILE"
+  fi
+  cat "$SITE_BASE_SUBNET_FILE"
+}
+
+get_subnet_info() {
+  case "$1" in
+    "subnet_id" )
+      retrieve_subnet_information | cut -f1
+      ;;
+    "state" )
+      retrieve_subnet_information | cut -f2
+      ;;
+  esac
+}
+
+clear_internet_gateway_information() {
+  rm -f "$SITE_BASE_INTERNET_GATEWAY_FILE"
+}
+
+request_internet_gateway_information() {
+  aws_exec ec2 describe-internet-gateways \
+    --filter "Name=attachment.vpc-id,Values=\"$(get_vpc_info vpc_id)\""\
+    --query "InternetGateways[].InternetGatewayId" --output text
+}
+
+retrieve_internet_gateway_information() {
+  if [ ! -f "$SITE_BASE_INTERNET_GATEWAY_FILE" ]; then
+    request_internet_gateway_information > "$SITE_BASE_INTERNET_GATEWAY_FILE"
+  fi
+  cat "$SITE_BASE_INTERNET_GATEWAY_FILE"
+}
+
+get_internet_gateway_info() {
+  case "$1" in
+    "internet_gateway_id" )
+      retrieve_internet_gateway_information | cut -f1
+      ;;
+  esac
+}
+
+clear_route_table_information() {
+  rm -f "$SITE_BASE_ROUTE_TABLE_FILE"
+}
+
+request_route_table_information() {
+  aws_exec ec2 describe-route-tables \
+    --filter "Name=vpc-id,Values=$(get_vpc_info vpc_id)" \
+             "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment,Values=\"${SITE_ENVIRONMENT}\"" \
+    --query "RouteTables[].{
+          table: @,
+          association: (length(Associations[? Main != \`true\`]) > \`0\`)
+        } | @[? association == \`true\`][].table.RouteTableId" --output text
+}
+
+retrieve_route_table_information() {
+  if [ ! -f "$SITE_BASE_ROUTE_TABLE_FILE" ]; then
+    request_route_table_information > "$SITE_BASE_ROUTE_TABLE_FILE"
+  fi
+  cat "$SITE_BASE_ROUTE_TABLE_FILE"
+}
+
+get_route_table_info() {
+  case "$1" in
+    "route_table_id" )
+      retrieve_route_table_information | cut -f1
+      ;;
+  esac
+}
+
+create_route_table() {
+  # create route-table and save new table's ID in a variable
+  rt_id="$(aws_exec ec2 create-route-table \
+    --tag-specifications "ResourceType=route-table,
+      Tags=[
+       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
+      ]" \
+    --vpc-id "$(get_vpc_info vpc_id)" \
+    --query "RouteTable.RouteTableId" --output text)"
+  aws_exec ec2 create-route \
+    --route-table-id "$rt_id" \
+    --destination-cidr-block "0.0.0.0/0" \
+    --gateway-id "$(get_internet_gateway_info internet_gateway_id)"
+  aws_exec ec2 create-route \
+    --route-table-id "$rt_id" \
+    --destination-ipv6-cidr-block "::/0" \
+    --gateway-id "$(get_internet_gateway_info internet_gateway_id)"
+  aws_exec ec2 associate-route-table \
+    --route-table-id "$rt_id" \
+    --subnet-id "$(get_subnet_info subnet_id)"
+}
+
+create_internet_gateway() {
+  ig_id="$(aws_exec ec2 create-internet-gateway \
+    --tag-specifications "ResourceType=internet-gateway,
+      Tags=[
+       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
+      ]" \
+    --query "InternetGateway.InternetGatewayId" --output text)"
+  aws_exec ec2 attach-internet-gateway --vpc-id "$(get_vpc_info vpc_id)" --internet-gateway-id "$ig_id"
+  echo "$ig_id" >"$SITE_BASE_INTERNET_GATEWAY_FILE"
+}
+
+create_vpc() {
+  aws_exec ec2 create-vpc \
+    --cidr-block 192.168.0.0/16 \
+    --tag-specifications "ResourceType=vpc,
+      Tags=[{Key=
+      \"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"}]"\
+    --query "Vpc.VpcId" --output text \
+    1> /dev/null 2>&1
+  until [ "$(get_vpc_info state)" = "available" ]; do
+    sleep 1
+    clear_vpc_information
+  done
+  main_rt_id="$(aws_exec ec2 describe-route-tables \
+    --filter "Name=association.main,Values=true" \
+             "Name=vpc-id,Values=$(get_vpc_info vpc_id)" \
+    --query "RouteTables[].RouteTableId" --output text)"
+  aws_exec ec2 create-tags --resources "$main_rt_id" \
+    --tags "Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\""
+}
+
+create_subnet() {
+  aws_exec ec2 create-subnet \
+    --cidr-block 192.168.0.0/20 \
+    --vpc-id "$(get_vpc_info vpc_id)" \
+    --tag-specifications "ResourceType=subnet,
+      Tags=[
+        {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"}
+      ]" \
+    1> /dev/null 2>&1
+  until [ "$(get_subnet_info state)" = "available" ]; do
+    sleep 1
+    clear_subnet_information
+  done
+}
+
+create_key_pair() {
+  if [ -z "$SITE_PUBLIC_KEY_FILE" ]; then
+    aws_exec ec2 create-key-pair \
+      --key-name "${SITE_PROJECT}:${SITE_PROGRAM_NAME}:${SITE_ENVIRONMENT}" \
+      --tag-specifications "ResourceType=key-pair,
+        Tags=[
+         {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
+         {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role\",Value=base}
+        ]" \
+      1> /dev/null 2>&1
+  else
+    aws_exec ec2 import-key-pair \
+      --key-name "${SITE_PROJECT}:${SITE_PROGRAM_NAME}:${SITE_ENVIRONMENT}" \
+      --public-key-material "fileb://${SITE_PUBLIC_KEY_FILE}" \
+      --tag-specifications "ResourceType=key-pair,
+        Tags=[
+         {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
+         {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role\",Value=base}
+        ]" \
+      1> /dev/null 2>&1
+  fi
+}
+
+create_security_group() {
+  group_id=$(aws_exec ec2 create-security-group \
+    --group-name "${SITE_PROJECT}:${SITE_PROGRAM_NAME}:${SITE_ENVIRONMENT}" \
+    --vpc-id "$(get_vpc_info vpc_id)" \
+    --description "${SITE_PROGRAM_NAME} base security group" \
+    --tag-specifications "ResourceType=security-group,
+      Tags=[
+       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
+       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role\",Value=base}
+      ]" \
+    --query "GroupId" --output text
+  )
+  add_ingress_port_to_security_group "$group_id" 22
+  add_ingress_port_to_security_group "$group_id" 80
+  add_ingress_port_to_security_group "$group_id" 443
+}
+
+add_ingress_port_to_security_group() {
+  aws_exec ec2 authorize-security-group-ingress \
+    --group-id "$1" \
+    --ip-permissions "IpRanges=[{CidrIp=\"0.0.0.0/0\"}],Ipv6Ranges=[{CidrIpv6=\"::/0\"}],
+                      FromPort=$2,ToPort=$2,IpProtocol=tcp"
+}
+
+create_instance() {
+  image_id="$(aws ec2 describe-images \
+    --output text --owners amazon --filters "Name=name,Values=amzn*" \
+    --query "Images[?starts_with(Name, \`\"amzn2-ami-hvm-\"\`)] 
+             | sort_by(@, &CreationDate)[-1].ImageId")"
+  aws_exec ec2 run-instances \
+    --block-device-mappings "DeviceName=/dev/xvda,Ebs={VolumeSize=8}" \
+    --image-id "$image_id" \
+    --instance-type t2.nano \
+    --subnet-id "$(get_subnet_info subnet_id)" \
+    --security-group-ids "$(get_security_group_info group_id)" \
+    --count 1 \
+    --key-name "$(get_key_pair_info key_name)" \
+    --tag-specifications "ResourceType=instance,
+      Tags=[
+       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
+       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role\",Value=base}
+      ]" \
+    --network-interfaces AssociatePublicIpAddress=true,DeviceIndex=0
+}
+
+get_vpc_info vpc_id
+if [ -z "$(get_vpc_info vpc_id)" ]; then
+  clear_vpc_information
+  create_vpc
+fi
+
+get_subnet_info subnet_id
+if [ -z "$(get_subnet_info subnet_id)" ]; then
+  clear_subnet_information
+  create_subnet
+fi
+
+get_key_pair_info key_name
+if [ -z "$(get_key_pair_info key_name)" ]; then
+  clear_base_key_pair_information
+  create_key_pair
+fi
+
+get_security_group_info group_id
+if [ -z "$(get_security_group_info group_id)" ]; then
+  clear_base_security_group_information
+  create_security_group
+fi
+
+get_base_instance_info instance_id
+if [ -z "$(get_base_instance_info instance_id)" ]; then
+  clear_base_instance_information
+  create_instance
+fi
+
+get_internet_gateway_info internet_gateway_id
+if [ -z "$(get_internet_gateway_info internet_gateway_id)" ]; then
+  echo "inside internet gateway"
+  clear_internet_gateway_information
+  create_internet_gateway
+fi
+
+get_route_table_info route_table_id
+if [ -z "$(get_route_table_info route_table_id)" ]; then
+  clear_route_table_information
+  create_route_table
+fi
