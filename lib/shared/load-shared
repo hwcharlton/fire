@@ -1,0 +1,11 @@
+#!/bin/sh
+
+load_shared() {
+  command_path="$(command -v "${BIN_PATH}/shared/shared-${1}")"
+  if [ "$command_path" = "" ]; then
+    unset command_path
+  fi
+  if [ -n "${command_path+x}" ]; then
+    . "$command_path"
+  fi
+}

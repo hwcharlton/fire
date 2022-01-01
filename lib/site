@@ -50,8 +50,11 @@ if [ -z "$READLINK" ]; then
   exit 1
 fi
 
-bin_path="$($READLINK -f "$0" | xargs dirname)"
-export PATH="${bin_path}:${PATH}"
+export BIN_PATH
+BIN_PATH="$($READLINK -f "$0" | xargs dirname)"
+
+export LOAD_SHARED_PATH="${BIN_PATH}/shared/load-shared"
+export PATH="${BIN_PATH}:${PATH}"
 
 case "$1" in
   "" | "-h" | "--help" )
@@ -64,6 +67,6 @@ case "$1" in
     fi
     if [ -n "${command_path+x}" ]; then
       shift 1
-      exec "$command_path" "$@"
+      eval "$command_path" "$@"
     fi
 esac
