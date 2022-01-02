@@ -1,0 +1,123 @@
+#!/bin/sh
+set -e
+
+. "$LOAD_SHARED_PATH"
+
+load_shared functions
+
+printf "Continuing will delete the base \"${SITE_NAME}\" in region %s" "$SITE_REGION"
+echo
+
+printf "Continue? "
+read -r
+echo
+
+case "$REPLY" in
+  y|Y ) 
+    echo "Continuing"
+    ;;
+  * ) 
+    echo "Not continuing"
+    exit
+    ;;
+esac
+
+
+BASE_INSTANCE_ID="$(get_base_instance_info instance_id)"
+
+if [ -n "$BASE_INSTANCE_ID" ]; then
+  echo "Terminating instance: $BASE_INSTANCE_ID"
+  aws_exec ec2 terminate-instances --instance-ids "$BASE_INSTANCE_ID" 1> /dev/null 2>&1
+else
+  echo "No ec2 instance to terminate"
+fi
+
+ROUTE_TABLE_ID="$(get_route_table_info route_table_id)"
+
+if [ -n "$ROUTE_TABLE_ID" ]; then
+  echo "Preparing for removal of route table: $ROUTE_TABLE_ID"
+
+  IPV4_CIDR_BLOCKS="$(get_route_table_info ipv4_cidr_blocks)"
+
+  if [ -n "$IPV4_CIDR_BLOCKS" ]; then
+    echo "Deleting routing for following Ipv4 CIDR blocks: $IPV4_CIDR_BLOCKS"
+    # shellcheck disable=SC2086
+    # Intentionally splitting for while loop
+    printf '%s\n' $IPV4_CIDR_BLOCKS | while read block
+    do
+      aws_exec ec2 delete-route --route-table-id "$ROUTE_TABLE_ID" --destination-cidr-block "$block" 1> /dev/null 2>&1
+    done
+  else
+    echo "No Ipv4 CIDR blocks to remove"
+  fi
+
+  IPV6_CIDR_BLOCKS="$(get_route_table_info ipv6_cidr_blocks)"
+
+  if [ -n "$IPV6_CIDR_BLOCKS" ]; then
+    echo "Deleting routing for following Ipv6 CIDR blocks: $IPV6_CIDR_BLOCKS"
+    # shellcheck disable=SC2086
+    # Intentionally splitting for while loop
+    printf '%s\n' $IPV6_CIDR_BLOCKS | while read block
+    do
+      aws_exec ec2 delete-route --route-table-id "$ROUTE_TABLE_ID" --destination-ipv6-cidr-block "$block" 1> /dev/null 2>&1
+    done
+  else
+    echo "No Ipv6 CIDR blocks to remove"
+  fi
+
+  ASSOCIATION_IDS="$(get_route_table_info association_ids)"
+
+  if [ -n "$ASSOCIATION_IDS" ]; then
+    echo "Removing route table associations: $ASSOCIATION_IDS"
+    # shellcheck disable=SC2086
+    # Intentionally splitting for while loop
+    printf '%s\n' $ASSOCIATION_IDS | while read association
+    do
+      aws_exec ec2 disassociate-route-table --association-id "$association" 1> /dev/null 2>&1
+    done
+  else
+    echo "No route table associations to remove"
+  fi
+
+  echo "Removing route table: $ROUTE_TABLE_ID"
+  aws_exec ec2 delete-route-table --route-table-id "$ROUTE_TABLE_ID" 1> /dev/null 2>&1
+else
+  echo "No route tables to remove"
+fi
+
+INTERNET_GATEWAY_ID="$(get_internet_gateway_info internet_gateway_id)"
+VPC_ID="$(get_vpc_info vpc_id)"
+
+if [ -n "$INTERNET_GATEWAY_ID" ]; then
+  echo "Detaching internet gateway: $INTERNET_GATEWAY_ID"
+  aws_exec ec2 detach-internet-gateway --vpc-id "$VPC_ID" --internet-gateway-id "$INTERNET_GATEWAY_ID"
+  echo "Deleting internet gateway: $INTERNET_GATEWAY_ID"
+  aws_exec ec2 delete-internet-gateway --internet-gateway-id "$INTERNET_GATEWAY_ID"
+else
+  echo "No internet gateway to detach and delete"
+fi
+
+SUBNET_ID="$(get_subnet_info subnet_id)"
+
+if [ -n "$SUBNET_ID" ]; then
+  echo "Deleting subnet: $SUBNET_ID"
+  aws_exec ec2 delete-subnet --subnet-id "$SUBNET_ID"
+else
+  echo "No subnet to delete"
+fi
+
+SECURITY_GROUP_ID="$(get_security_group_info group_id)"
+
+if [ -n "$SECURITY_GROUP_ID" ]; then
+  echo "Deleting security group: $SECURITY_GROUP_ID"
+  aws_exec ec2 delete-security-group --group-id "$SECURITY_GROUP_ID"
+else
+  echo "No security group to delete"
+fi
+
+if [ -n "$VPC_ID" ]; then
+  echo "Deleting VPC: $VPC_ID"
+  aws_exec ec2 delete-vpc --vpc-id "$VPC_ID"
+fi
+
+echo "Deletion of base has completed"

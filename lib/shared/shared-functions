@@ -187,11 +187,12 @@ request_route_table_information() {
     --query "RouteTables[].
         {
           table: @,
-          association: (length(Associations[? Main != \`true\`]) > \`0\`)
+          association: (length(Associations[? Main == \`true\`]) == \`0\`)
         } | @[? association == \`true\`][].table.
         {
           RouteTableId: RouteTableId,
-          Routes: Routes
+          Routes: Routes,
+          AssociationIds: Associations[?! Main][].RouteTableAssociationId
         } | @[0]"
 }
 
@@ -203,6 +204,10 @@ retrieve_route_table_information() {
 }
 
 get_route_table_info() {
+  ROUTE_DATA="$(retrieve_route_table_information)"
+  if [ "$ROUTE_DATA" = "null" ]; then
+    return
+  fi
   case "$1" in
     "route_table_id" )
       retrieve_route_table_information | jp -u "RouteTableId"
@@ -212,6 +217,9 @@ get_route_table_info() {
       ;;
     "ipv6_cidr_blocks" )
       retrieve_route_table_information | jp -u "Routes[?starts_with(GatewayId, \`\"igw-\"\`)].DestinationIpv6CidrBlock | join(\`\"\\n\"\`, @)"
+      ;;
+    "association_ids" )
+      retrieve_route_table_information | jp -u "AssociationIds | join(\`\"\\n\"\`, @)"
       ;;
   esac
 }

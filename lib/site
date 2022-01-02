@@ -23,9 +23,10 @@ fi
 
 export SITE_REGION=${SITE_REGION:=$(aws configure get region)}
 export SITE_PROJECT=${SITE_PROJECT:="project"}
-export SITE_ENVIRONMENT=${SITE_ENVIRONMENT:="development"}
 export SITE_PROGRAM_NAME=${SITE_PROGRAM_NAME:="site-manager"}
+export SITE_ENVIRONMENT=${SITE_ENVIRONMENT:="development"}
 export SITE_PUBLIC_KEY_FILE=${SITE_PUBLIC_KEY_FILE}
+export SITE_NAME="${SITE_PROJECT}:${SITE_PROGRAM_NAME}"
 
 # Set up cache (temporary files) directory
 
