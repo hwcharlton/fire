@@ -2,7 +2,7 @@
 set -e
 export -n CDPATH
 
-eval "$LOAD_SHARED_PATH"
+. "$LOAD_SHARED_PATH"
 
 printf "Creating new base in: %s" "$SITE_REGION"
 
