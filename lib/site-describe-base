@@ -5,20 +5,6 @@ set -e
 
 load_shared functions
 
-# shellcheck disable=SC2034
-# These variables are used in the eval inside display_var
-{
-  VPC_ID="$(get_vpc_info vpc_id)"
-  SUBNET_ID="$(get_subnet_info subnet_id)"
-  SECURITY_GROUP="$(get_security_group_info group_id)"
-  INTERNET_GATEWAY_ID="$(get_internet_gateway_info internet_gateway_id)"
-  ROUTE_TABLE="$(get_route_table_info route_table_id)"
-  IPV4_CIDR_BLOCKS="$(get_route_table_info ipv4_cidr_blocks)"
-  IPV6_CIDR_BLOCKS="$(get_route_table_info ipv6_cidr_blocks)"
-  KEY_PAIR="$(get_key_pair_info key_name)"
-  BASE_INSTANCE="$(get_base_instance_info instance_id)"
-}
-
 display_var() {
   eval "echo \"$1\": \$$1"
 }
@@ -26,12 +12,27 @@ display_var() {
 printf "Displaying information about region %s" "$SITE_REGION"
 echo
 
-display_var VPC_ID
-display_var SUBNET_ID
-display_var INTERNET_GATEWAY_ID
-display_var ROUTE_TABLE
-display_var IPV4_CIDR_BLOCKS
-display_var IPV6_CIDR_BLOCKS
-display_var SECURITY_GROUP
-display_var BASE_INSTANCE
-display_var KEY_PAIR
+# shellcheck disable=SC2034
+# These variables are used in the eval inside display_var
+{
+  VPC_ID="$(get_vpc_info vpc_id)"
+  display_var VPC_ID
+  SUBNET_ID="$(get_subnet_info subnet_id)"
+  display_var SUBNET_ID
+  SECURITY_GROUP="$(get_security_group_info group_id)"
+  display_var SECURITY_GROUP
+  INTERNET_GATEWAY_ID="$(get_internet_gateway_info internet_gateway_id)"
+  display_var INTERNET_GATEWAY_ID
+  ROUTE_TABLE="$(get_route_table_info route_table_id)"
+  display_var ROUTE_TABLE
+  IPV4_CIDR_BLOCKS="$(get_route_table_info ipv4_cidr_blocks)"
+  display_var IPV4_CIDR_BLOCKS
+  IPV6_CIDR_BLOCKS="$(get_route_table_info ipv6_cidr_blocks)"
+  display_var IPV6_CIDR_BLOCKS
+  ASSOCIATION_IDS="$(get_route_table_info association_ids)"
+  display_var ASSOCIATION_IDS
+  KEY_PAIR="$(get_key_pair_info key_name)"
+  display_var KEY_PAIR
+  BASE_INSTANCE="$(get_base_instance_info instance_id)"
+  display_var BASE_INSTANCE
+}
