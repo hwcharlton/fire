@@ -72,8 +72,14 @@ clear_base_instance_information() {
 request_base_instance_information() {
   aws_exec ec2 describe-instances \
     --filter "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role,Values=base"\
-             "Name=subnet-id,Values=$(get_subnet_info subnet_id)"\
-    --query "Reservations[].Instances[].{InstanceId: InstanceId, VpcId: VpcId}" --output text
+             "Name=instance-state-name,Values=pending,running"\
+    --query "Reservations[].Instances[].
+      {
+        InstanceId: InstanceId,
+        VpcId: VpcId,
+        PublicIp: (NetworkInterfaces[].Association.PublicIp | @[0]),
+        State: State.Name
+      } | @[0]"
 }
 
 retrieve_base_instance_information() {
@@ -84,12 +90,22 @@ retrieve_base_instance_information() {
 }
 
 get_base_instance_info() {
+  INSTANCE_DATA="$(retrieve_base_instance_information)"
+  if [ "$INSTANCE_DATA" = "null" ]; then
+    return
+  fi
   case "$1" in
     "instance_id" )
-      retrieve_base_instance_information | cut -f1
+      echo "$INSTANCE_DATA" | jp -u "InstanceId"
       ;;
     "vpc_id" )
-      retrieve_base_instance_information | cut -f2
+      echo "$INSTANCE_DATA" | jp -u "VpcId"
+      ;;
+    "public_ip" )
+      echo "$INSTANCE_DATA" | jp -u "PublicIp"
+      ;;
+    "state" )
+      echo "$INSTANCE_DATA" | jp -u "State"
       ;;
   esac
 }
