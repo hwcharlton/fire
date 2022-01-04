@@ -10,7 +10,6 @@ echo
 
 printf "Continue? "
 read -r
-echo
 
 case "$REPLY" in
   y|Y ) 
@@ -21,6 +20,12 @@ case "$REPLY" in
     exit
     ;;
 esac
+
+get_public_ip_for_instance() {
+	aws_exec ec2 describe-instances \
+		--instance-ids "${1}" \
+		--query "Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp" --output text
+}
 
 
 BASE_INSTANCE_ID="$(get_base_instance_info instance_id)"
@@ -88,6 +93,23 @@ fi
 INTERNET_GATEWAY_ID="$(get_internet_gateway_info internet_gateway_id)"
 VPC_ID="$(get_vpc_info vpc_id)"
 
+if [ -n "$BASE_INSTANCE_ID" ]; then
+	tries=0
+  while [ $tries -lt 20 ]; do
+    PUBLIC_IP="$(get_public_ip_for_instance "$BASE_INSTANCE_ID")"
+    if [ -z "$PUBLIC_IP" ]; then
+      break
+    fi
+    sleep 1
+  done
+fi
+
+if [ -n "$PUBLIC_IP" ]; then
+  echo "Instance $BASE_INSTANCE_ID is still using public IP address: $PUBLIC_IP"
+  echo "Cannot detach internet gateway until the public IP address is freed"
+  exit 1
+fi
+
 if [ -n "$INTERNET_GATEWAY_ID" ]; then
   echo "Detaching internet gateway: $INTERNET_GATEWAY_ID"
   aws_exec ec2 detach-internet-gateway --vpc-id "$VPC_ID" --internet-gateway-id "$INTERNET_GATEWAY_ID"
@@ -118,6 +140,8 @@ fi
 if [ -n "$VPC_ID" ]; then
   echo "Deleting VPC: $VPC_ID"
   aws_exec ec2 delete-vpc --vpc-id "$VPC_ID"
+else
+  echo "No VPC to delete"
 fi
 
 echo "Deletion of base has completed"
