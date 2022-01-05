@@ -65,6 +65,8 @@ case "$1" in
     command_path="$(command -v "fire-${1}" || true)"
     if [ "$command_path" = "" ]; then
       unset command_path
+      echo "Undefined command: ${1}"
+      exit
     fi
     if [ -n "${command_path+x}" ]; then
       shift 1
