@@ -226,16 +226,16 @@ get_route_table_info() {
   fi
   case "$1" in
     "route_table_id" )
-      retrieve_route_table_information | jp -u "RouteTableId"
+      echo "$ROUTE_DATA" | jp -u "RouteTableId"
       ;;
     "ipv4_cidr_blocks" )
-      retrieve_route_table_information | jp -u "Routes[?starts_with(GatewayId, \`\"igw-\"\`)].DestinationCidrBlock | join(\`\"\\n\"\`, @)"
+      echo "$ROUTE_DATA" | jp -u "Routes[?starts_with(GatewayId, \`\"igw-\"\`)].DestinationCidrBlock | join(\`\"\\n\"\`, @)"
       ;;
     "ipv6_cidr_blocks" )
-      retrieve_route_table_information | jp -u "Routes[?starts_with(GatewayId, \`\"igw-\"\`)].DestinationIpv6CidrBlock | join(\`\"\\n\"\`, @)"
+      echo "$ROUTE_DATA" | jp -u "Routes[?starts_with(GatewayId, \`\"igw-\"\`)].DestinationIpv6CidrBlock | join(\`\"\\n\"\`, @)"
       ;;
     "association_ids" )
-      retrieve_route_table_information | jp -u "AssociationIds | join(\`\"\\n\"\`, @)"
+      echo "$ROUTE_DATA" | jp -u "AssociationIds | join(\`\"\\n\"\`, @)"
       ;;
   esac
 }
