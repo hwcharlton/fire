@@ -9,7 +9,7 @@ display_var() {
   eval "echo \"$1\": \$$1"
 }
 
-printf "Displaying information about region %s" "$SITE_REGION"
+printf "Displaying information about region %s" "$FIRE_REGION"
 echo
 
 # shellcheck disable=SC2034

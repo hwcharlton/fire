@@ -4,7 +4,7 @@ export -n CDPATH
 
 . "$LOAD_SHARED_PATH"
 
-printf "Creating new base in: %s" "$SITE_REGION"
+printf "Creating new base in: %s" "$FIRE_REGION"
 
 load_shared functions
 
@@ -13,7 +13,7 @@ create_route_table() {
   rt_id="$(aws_exec ec2 create-route-table \
     --tag-specifications "ResourceType=route-table,
       Tags=[
-       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
+       {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\"},
       ]" \
     --vpc-id "$(get_vpc_info vpc_id)" \
     --query "RouteTable.RouteTableId" --output text)"
@@ -34,11 +34,11 @@ create_internet_gateway() {
   ig_id="$(aws_exec ec2 create-internet-gateway \
     --tag-specifications "ResourceType=internet-gateway,
       Tags=[
-       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
+       {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\"},
       ]" \
     --query "InternetGateway.InternetGatewayId" --output text)"
   aws_exec ec2 attach-internet-gateway --vpc-id "$(get_vpc_info vpc_id)" --internet-gateway-id "$ig_id"
-  echo "$ig_id" >"$SITE_BASE_INTERNET_GATEWAY_FILE"
+  echo "$ig_id" >"$FIRE_BASE_INTERNET_GATEWAY_FILE"
 }
 
 create_vpc() {
@@ -46,7 +46,7 @@ create_vpc() {
     --cidr-block 192.168.0.0/16 \
     --tag-specifications "ResourceType=vpc,
       Tags=[{Key=
-      \"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"}]"\
+      \"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\"}]"\
     --query "Vpc.VpcId" --output text \
     1> /dev/null 2>&1
   until [ "$(get_vpc_info state)" = "available" ]; do
@@ -58,7 +58,7 @@ create_vpc() {
              "Name=vpc-id,Values=$(get_vpc_info vpc_id)" \
     --query "RouteTables[].RouteTableId" --output text)"
   aws_exec ec2 create-tags --resources "$main_rt_id" \
-    --tags "Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\""
+    --tags "Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\""
 }
 
 create_subnet() {
@@ -67,7 +67,7 @@ create_subnet() {
     --vpc-id "$(get_vpc_info vpc_id)" \
     --tag-specifications "ResourceType=subnet,
       Tags=[
-        {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"}
+        {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\"}
       ]" \
     1> /dev/null 2>&1
   until [ "$(get_subnet_info state)" = "available" ]; do
@@ -77,23 +77,23 @@ create_subnet() {
 }
 
 create_key_pair() {
-  if [ -z "$SITE_PUBLIC_KEY_FILE" ]; then
+  if [ -z "$FIRE_PUBLIC_KEY_FILE" ]; then
     aws_exec ec2 create-key-pair \
-      --key-name "${SITE_PROJECT}:${SITE_PROGRAM_NAME}:${SITE_ENVIRONMENT}" \
+      --key-name "${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}:${FIRE_ENVIRONMENT}" \
       --tag-specifications "ResourceType=key-pair,
         Tags=[
-         {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
-         {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role\",Value=base}
+         {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\"},
+         {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-role\",Value=base}
         ]" \
       1> /dev/null 2>&1
   else
     aws_exec ec2 import-key-pair \
-      --key-name "${SITE_PROJECT}:${SITE_PROGRAM_NAME}:${SITE_ENVIRONMENT}" \
-      --public-key-material "fileb://${SITE_PUBLIC_KEY_FILE}" \
+      --key-name "${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}:${FIRE_ENVIRONMENT}" \
+      --public-key-material "fileb://${FIRE_PUBLIC_KEY_FILE}" \
       --tag-specifications "ResourceType=key-pair,
         Tags=[
-         {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
-         {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role\",Value=base}
+         {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\"},
+         {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-role\",Value=base}
         ]" \
       1> /dev/null 2>&1
   fi
@@ -101,13 +101,13 @@ create_key_pair() {
 
 create_security_group() {
   group_id=$(aws_exec ec2 create-security-group \
-    --group-name "${SITE_PROJECT}:${SITE_PROGRAM_NAME}:${SITE_ENVIRONMENT}" \
+    --group-name "${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}:${FIRE_ENVIRONMENT}" \
     --vpc-id "$(get_vpc_info vpc_id)" \
-    --description "${SITE_PROGRAM_NAME} base security group" \
+    --description "${FIRE_PROGRAM_NAME} base security group" \
     --tag-specifications "ResourceType=security-group,
       Tags=[
-       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
-       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role\",Value=base}
+       {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\"},
+       {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-role\",Value=base}
       ]" \
     --query "GroupId" --output text
   )
@@ -138,8 +138,8 @@ create_instance() {
     --key-name "$(get_key_pair_info key_name)" \
     --tag-specifications "ResourceType=instance,
       Tags=[
-       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",Value=\"${SITE_ENVIRONMENT}\"},
-       {Key=\"${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role\",Value=base}
+       {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\"},
+       {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-role\",Value=base}
       ]" \
     --network-interfaces AssociatePublicIpAddress=true,DeviceIndex=0
 }

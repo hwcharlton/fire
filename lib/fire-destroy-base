@@ -5,7 +5,7 @@ set -e
 
 load_shared functions
 
-printf "Continuing will delete the base \"${SITE_NAME}\" in region %s" "$SITE_REGION"
+printf "Continuing will delete the base \"${FIRE_NAME}\" in region %s" "$FIRE_REGION"
 echo
 
 printf "Continue? "

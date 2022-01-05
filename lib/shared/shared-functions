@@ -1,35 +1,35 @@
 #!/bin/sh
 set -e
 
-SITE_BASE_INSTANCE_FILE="${SITE_CACHE_DIR}/instance_data"
-SITE_BASE_VPC_FILE="${SITE_CACHE_DIR}/vpc_data"
-SITE_BASE_SUBNET_FILE="${SITE_CACHE_DIR}/subnet_data"
-SITE_BASE_KEY_PAIR_FILE="${SITE_CACHE_DIR}/key_pair_data"
-SITE_BASE_SECURITY_GROUP_FILE="${SITE_CACHE_DIR}/security_group_data"
-SITE_BASE_INTERNET_GATEWAY_FILE="${SITE_CACHE_DIR}/internet_gateway_data"
-SITE_BASE_ROUTE_TABLE_FILE="${SITE_CACHE_DIR}/route_table_data"
+FIRE_BASE_INSTANCE_FILE="${FIRE_CACHE_DIR}/instance_data"
+FIRE_BASE_VPC_FILE="${FIRE_CACHE_DIR}/vpc_data"
+FIRE_BASE_SUBNET_FILE="${FIRE_CACHE_DIR}/subnet_data"
+FIRE_BASE_KEY_PAIR_FILE="${FIRE_CACHE_DIR}/key_pair_data"
+FIRE_BASE_SECURITY_GROUP_FILE="${FIRE_CACHE_DIR}/security_group_data"
+FIRE_BASE_INTERNET_GATEWAY_FILE="${FIRE_CACHE_DIR}/internet_gateway_data"
+FIRE_BASE_ROUTE_TABLE_FILE="${FIRE_CACHE_DIR}/route_table_data"
 
 aws_exec() {
-  aws --region "$SITE_REGION" "$@"
+  aws --region "$FIRE_REGION" "$@"
 }
 
 clear_base_security_group_information() {
-  rm -f "$SITE_BASE_SECURITY_GROUP_FILE"
+  rm -f "$FIRE_BASE_SECURITY_GROUP_FILE"
 }
 
 request_base_security_group_information() {
   aws_exec ec2 describe-security-groups \
-    --filter "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role,Values=base" \
-             "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment,Values=${SITE_ENVIRONMENT}" \
+    --filter "Name=tag:${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-role,Values=base" \
+             "Name=tag:${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment,Values=${FIRE_ENVIRONMENT}" \
              "Name=vpc-id,Values=$(get_vpc_info vpc_id)" \
     --query "SecurityGroups[].GroupId" --output text
 }
 
 retrieve_base_security_group_information() {
-  if [ ! -f "$SITE_BASE_SECURITY_GROUP_FILE" ]; then
-    request_base_security_group_information > "${SITE_BASE_SECURITY_GROUP_FILE}"
+  if [ ! -f "$FIRE_BASE_SECURITY_GROUP_FILE" ]; then
+    request_base_security_group_information > "${FIRE_BASE_SECURITY_GROUP_FILE}"
   fi
-  cat "${SITE_BASE_SECURITY_GROUP_FILE}"
+  cat "${FIRE_BASE_SECURITY_GROUP_FILE}"
 }
 
 get_security_group_info() {
@@ -41,20 +41,20 @@ get_security_group_info() {
 }
 
 clear_base_key_pair_information() {
-  rm -f "$SITE_BASE_KEY_PAIR_FILE"
+  rm -f "$FIRE_BASE_KEY_PAIR_FILE"
 }
 
 request_key_pair_information() {
   aws_exec ec2 describe-key-pairs \
-    --filter "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role,Values=base" \
+    --filter "Name=tag:${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-role,Values=base" \
     --query "KeyPairs[].KeyName" --output text
 }
 
 retrieve_key_pair_information() {
-  if [ ! -f "$SITE_BASE_KEY_PAIR_FILE" ]; then
-    request_key_pair_information > "${SITE_BASE_KEY_PAIR_FILE}"
+  if [ ! -f "$FIRE_BASE_KEY_PAIR_FILE" ]; then
+    request_key_pair_information > "${FIRE_BASE_KEY_PAIR_FILE}"
   fi
-  cat "${SITE_BASE_KEY_PAIR_FILE}"
+  cat "${FIRE_BASE_KEY_PAIR_FILE}"
 }
 
 get_key_pair_info() {
@@ -66,12 +66,12 @@ get_key_pair_info() {
 }
 
 clear_base_instance_information() {
-  rm -f "$SITE_BASE_INSTANCE_FILE"
+  rm -f "$FIRE_BASE_INSTANCE_FILE"
 }
 
 request_base_instance_information() {
   aws_exec ec2 describe-instances \
-    --filter "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-role,Values=base"\
+    --filter "Name=tag:${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-role,Values=base"\
              "Name=instance-state-name,Values=pending,running"\
     --query "Reservations[].Instances[].
       {
@@ -83,10 +83,10 @@ request_base_instance_information() {
 }
 
 retrieve_base_instance_information() {
-  if [ ! -f "$SITE_BASE_INSTANCE_FILE" ]; then
-    request_base_instance_information > "${SITE_BASE_INSTANCE_FILE}"
+  if [ ! -f "$FIRE_BASE_INSTANCE_FILE" ]; then
+    request_base_instance_information > "${FIRE_BASE_INSTANCE_FILE}"
   fi
-  cat "${SITE_BASE_INSTANCE_FILE}"
+  cat "${FIRE_BASE_INSTANCE_FILE}"
 }
 
 get_base_instance_info() {
@@ -111,21 +111,21 @@ get_base_instance_info() {
 }
 
 clear_vpc_information() {
-  rm -f "$SITE_BASE_VPC_FILE"
+  rm -f "$FIRE_BASE_VPC_FILE"
 }
 
 request_vpc_information() {
   aws_exec ec2 describe-vpcs \
-    --filter "Name=\"tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment\",
-              Values=${SITE_ENVIRONMENT}"\
+    --filter "Name=\"tag:${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",
+              Values=${FIRE_ENVIRONMENT}"\
     --query "Vpcs[].[VpcId, State]" --output text
 }
 
 retrieve_vpc_information() {
-  if [ ! -f "$SITE_BASE_VPC_FILE" ]; then
-    request_vpc_information > "${SITE_BASE_VPC_FILE}"
+  if [ ! -f "$FIRE_BASE_VPC_FILE" ]; then
+    request_vpc_information > "${FIRE_BASE_VPC_FILE}"
   fi
-  cat "${SITE_BASE_VPC_FILE}"
+  cat "${FIRE_BASE_VPC_FILE}"
 }
 
 get_vpc_info() {
@@ -140,7 +140,7 @@ get_vpc_info() {
 }
 
 clear_subnet_information() {
-  rm -f "$SITE_BASE_SUBNET_FILE"
+  rm -f "$FIRE_BASE_SUBNET_FILE"
 }
 
 request_subnet_information() {
@@ -150,10 +150,10 @@ request_subnet_information() {
 }
 
 retrieve_subnet_information() {
-  if [ ! -f "$SITE_BASE_SUBNET_FILE" ]; then
-    request_subnet_information > "$SITE_BASE_SUBNET_FILE"
+  if [ ! -f "$FIRE_BASE_SUBNET_FILE" ]; then
+    request_subnet_information > "$FIRE_BASE_SUBNET_FILE"
   fi
-  cat "$SITE_BASE_SUBNET_FILE"
+  cat "$FIRE_BASE_SUBNET_FILE"
 }
 
 get_subnet_info() {
@@ -168,7 +168,7 @@ get_subnet_info() {
 }
 
 clear_internet_gateway_information() {
-  rm -f "$SITE_BASE_INTERNET_GATEWAY_FILE"
+  rm -f "$FIRE_BASE_INTERNET_GATEWAY_FILE"
 }
 
 request_internet_gateway_information() {
@@ -178,10 +178,10 @@ request_internet_gateway_information() {
 }
 
 retrieve_internet_gateway_information() {
-  if [ ! -f "$SITE_BASE_INTERNET_GATEWAY_FILE" ]; then
-    request_internet_gateway_information > "$SITE_BASE_INTERNET_GATEWAY_FILE"
+  if [ ! -f "$FIRE_BASE_INTERNET_GATEWAY_FILE" ]; then
+    request_internet_gateway_information > "$FIRE_BASE_INTERNET_GATEWAY_FILE"
   fi
-  cat "$SITE_BASE_INTERNET_GATEWAY_FILE"
+  cat "$FIRE_BASE_INTERNET_GATEWAY_FILE"
 }
 
 get_internet_gateway_info() {
@@ -193,13 +193,13 @@ get_internet_gateway_info() {
 }
 
 clear_route_table_information() {
-  rm -f "$SITE_BASE_ROUTE_TABLE_FILE"
+  rm -f "$FIRE_BASE_ROUTE_TABLE_FILE"
 }
 
 request_route_table_information() {
   aws_exec ec2 describe-route-tables \
     --filter "Name=vpc-id,Values=$(get_vpc_info vpc_id)" \
-             "Name=tag:${SITE_PROJECT}:${SITE_PROGRAM_NAME}-environment,Values=\"${SITE_ENVIRONMENT}\"" \
+             "Name=tag:${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment,Values=\"${FIRE_ENVIRONMENT}\"" \
     --query "RouteTables[].
         {
           table: @,
@@ -213,10 +213,10 @@ request_route_table_information() {
 }
 
 retrieve_route_table_information() {
-  if [ ! -f "$SITE_BASE_ROUTE_TABLE_FILE" ]; then
-    request_route_table_information > "$SITE_BASE_ROUTE_TABLE_FILE"
+  if [ ! -f "$FIRE_BASE_ROUTE_TABLE_FILE" ]; then
+    request_route_table_information > "$FIRE_BASE_ROUTE_TABLE_FILE"
   fi
-  cat "$SITE_BASE_ROUTE_TABLE_FILE"
+  cat "$FIRE_BASE_ROUTE_TABLE_FILE"
 }
 
 get_route_table_info() {

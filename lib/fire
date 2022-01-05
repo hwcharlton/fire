@@ -15,18 +15,18 @@ escape_quotes() {
 
 if [ "$1" = "--region" ]; then
   shift
-  export SITE_REGION="$1"
+  export FIRE_REGION="$1"
   shift
 fi
 
 # Set up global variables
 
-export SITE_REGION=${SITE_REGION:=$(aws configure get region)}
-export SITE_PROJECT=${SITE_PROJECT:="project"}
-export SITE_PROGRAM_NAME=${SITE_PROGRAM_NAME:="site-manager"}
-export SITE_ENVIRONMENT=${SITE_ENVIRONMENT:="development"}
-export SITE_PUBLIC_KEY_FILE=${SITE_PUBLIC_KEY_FILE}
-export SITE_NAME="${SITE_PROJECT}:${SITE_PROGRAM_NAME}"
+export FIRE_REGION=${FIRE_REGION:=$(aws configure get region)}
+export FIRE_PROJECT=${FIRE_PROJECT:="project"}
+export FIRE_PROGRAM_NAME=${FIRE_PROGRAM_NAME:="fire-manager"}
+export FIRE_ENVIRONMENT=${FIRE_ENVIRONMENT:="development"}
+export FIRE_PUBLIC_KEY_FILE=${FIRE_PUBLIC_KEY_FILE}
+export FIRE_NAME="${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}"
 
 # Set up cache (temporary files) directory
 
@@ -36,13 +36,13 @@ if [ -z "$MKTEMP" ]; then
   exit 1
 fi
 
-if [ -z "$SITE_CACHE_DIR" ]; then
-  export SITE_TEMP_CACHE_DIR=1
-  export SITE_CACHE_DIR
-  SITE_CACHE_DIR="$(mktemp -d)"
-  trap 'rm -rf $SITE_CACHE_DIR' 0 2 3 15
+if [ -z "$FIRE_CACHE_DIR" ]; then
+  export FIRE_TEMP_CACHE_DIR=1
+  export FIRE_CACHE_DIR
+  FIRE_CACHE_DIR="$(mktemp -d)"
+  trap 'rm -rf $FIRE_CACHE_DIR' 0 2 3 15
 else
-  trap 'rm -f $SITE_CACHE_DIR/*' 0 2 3 15
+  trap 'rm -f $FIRE_CACHE_DIR/*' 0 2 3 15
 fi
 
 READLINK=$(command -v greadlink readlink | head -1)
@@ -62,7 +62,7 @@ case "$1" in
     echo "Help not implemented yet"
     ;;
   * )
-    command_path="$(command -v "site-${1}" || true)"
+    command_path="$(command -v "fire-${1}" || true)"
     if [ "$command_path" = "" ]; then
       unset command_path
     fi
