@@ -5,6 +5,7 @@ export -n CDPATH
 . "$LOAD_SHARED_PATH"
 
 printf "Creating new base in: %s" "$FIRE_REGION"
+echo
 
 load_shared functions
 
@@ -144,45 +145,37 @@ create_instance() {
     --network-interfaces AssociatePublicIpAddress=true,DeviceIndex=0
 }
 
-get_vpc_info vpc_id
 if [ -z "$(get_vpc_info vpc_id)" ]; then
   clear_vpc_information
-  create_vpc
+  create_vpc 1> /dev/null 2>&1
 fi
 
-get_subnet_info subnet_id
 if [ -z "$(get_subnet_info subnet_id)" ]; then
   clear_subnet_information
-  create_subnet
+  create_subnet 1> /dev/null 2>&1
 fi
 
-get_key_pair_info key_name
 if [ -z "$(get_key_pair_info key_name)" ]; then
   clear_base_key_pair_information
-  create_key_pair
+  create_key_pair 1> /dev/null 2>&1
 fi
 
-get_security_group_info group_id
 if [ -z "$(get_security_group_info group_id)" ]; then
   clear_base_security_group_information
-  create_security_group
+  create_security_group 1> /dev/null 2>&1
 fi
 
-get_base_instance_info instance_id
 if [ -z "$(get_base_instance_info instance_id)" ]; then
   clear_base_instance_information
-  create_instance
+  create_instance 1> /dev/null 2>&1
 fi
 
-get_internet_gateway_info internet_gateway_id
 if [ -z "$(get_internet_gateway_info internet_gateway_id)" ]; then
-  echo "inside internet gateway"
   clear_internet_gateway_information
-  create_internet_gateway
+  create_internet_gateway 1> /dev/null 2>&1
 fi
 
-get_route_table_info route_table_id
 if [ -z "$(get_route_table_info route_table_id)" ]; then
   clear_route_table_information
-  create_route_table
+  create_route_table 1> /dev/null 2>&1
 fi
