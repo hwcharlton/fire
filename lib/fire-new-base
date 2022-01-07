@@ -10,7 +10,6 @@ echo
 load_shared functions
 
 create_route_table() {
-  # create route-table and save new table's ID in a variable
   rt_id="$(aws_exec ec2 create-route-table \
     --tag-specifications "ResourceType=route-table,
       Tags=[
