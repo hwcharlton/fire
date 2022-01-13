@@ -2,15 +2,6 @@
 set -e
 export -n CDPATH
 
-# Globally used functions
-
-escape_quotes() {
-  for line in "$@"; do
-    line=$(echo "$line" | sed -e "s/\\([\"\]\\)/\\\\\\1/g")
-    echo "\"""$line""\""
-  done
-}
-
 while [ "$1" != "${1#-}" ]; do
   if [ "$1" = '--region' ]; then
     shift
