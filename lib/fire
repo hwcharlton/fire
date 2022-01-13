@@ -11,13 +11,18 @@ escape_quotes() {
   done
 }
 
-# Parse region specification
+while [ "$1" != "${1#-}" ]; do
+  if [ "$1" = '--region' ]; then
+    shift
+    export FIRE_REGION="$1"
+    shift
+  fi
 
-if [ "$1" = "--region" ]; then
-  shift
-  export FIRE_REGION="$1"
-  shift
-fi
+  if [ "$1" = '--debug' ]; then
+    export FIRE_DEBUG_FLAG=1
+    shift
+  fi
+done
 
 # Set up global variables
 
@@ -40,10 +45,33 @@ if [ -z "$FIRE_CACHE_DIR" ]; then
   export FIRE_TEMP_CACHE_DIR=1
   export FIRE_CACHE_DIR
   FIRE_CACHE_DIR="$(mktemp -d)"
-  trap 'rm -rf $FIRE_CACHE_DIR' 0 2 3 15
-else
-  trap 'rm -f $FIRE_CACHE_DIR/*' 0 2 3 15
 fi
+
+trap 'clean_up' 0 2 3 15
+
+export FIRE_ERROR_MESSAGE_FILE="$FIRE_CACHE_DIR/error"
+
+clean_up() {
+  if [ -f "$FIRE_ERROR_MESSAGE_FILE" ]; then
+    echo "Encountered the following error:"
+    cat "$FIRE_ERROR_MESSAGE_FILE"
+    export FIRE_DEBUG_FLAG=1
+  fi
+
+  if [ -n "$FIRE_DEBUG_FLAG" ]; then
+    echo "Cache files are located in: $FIRE_CACHE_DIR"
+  else
+    delete_cache_files
+  fi
+}
+
+delete_cache_files() {
+  if [ -z "$FIRE_TEMP_CACHE_DIR" ]; then
+    rm -f "$FIRE_CACHE_DIR"/*
+  else
+    rm -rf "$FIRE_CACHE_DIR"
+  fi
+}
 
 READLINK=$(command -v greadlink readlink | head -1)
 if [ -z "$READLINK" ]; then
