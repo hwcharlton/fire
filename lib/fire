@@ -9,6 +9,24 @@ while [ "$1" != "${1#-}" ]; do
     shift
   fi
 
+  if [ "$1" = '--program-name' ]; then
+    shift
+    export FIRE_PROGRAM_NAME="$1"
+    shift
+  fi
+
+  if [ "$1" = '--environment' ]; then
+    shift
+    export FIRE_ENVIRONMENT="$1"
+    shift
+  fi
+
+  if [ "$1" = '--project' ]; then
+    shift
+    export FIRE_PROJECT="$1"
+    shift
+  fi
+
   if [ "$1" = '--debug' ]; then
     export FIRE_DEBUG_FLAG=1
     shift
