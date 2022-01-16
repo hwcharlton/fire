@@ -35,4 +35,6 @@ echo
   display_var KEY_PAIR
   BASE_INSTANCE="$(get_base_instance_info instance_id)"
   display_var BASE_INSTANCE
+  INSTANCE_IP="$(get_base_instance_info public_ip)"
+  display_var INSTANCE_IP
 }
