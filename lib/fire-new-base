@@ -77,18 +77,27 @@ create_subnet() {
 }
 
 create_key_pair() {
-  if [ -z "$FIRE_PUBLIC_KEY_FILE" ]; then
+  local key_name
+  key_name="${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}:${FIRE_ENVIRONMENT}"
+  if [ -z "$FIRE_PUBLIC_KEY_FILE" ] || [ -z "$FIRE_PRIVATE_KEY_FILE" ]; then
+    local key_dir key_file
+    key_dir="${FIRE_BASE_DIRECTORY}/keys/${FIRE_REGION}"
+    key_file="${key_dir}/$(echo "$key_name" | tr ':' '_').pem"
+    mkdir -p "$key_dir"
     aws_exec ec2 create-key-pair \
-      --key-name "${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}:${FIRE_ENVIRONMENT}" \
+      --key-name "$key_name" \
       --tag-specifications "ResourceType=key-pair,
         Tags=[
          {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-environment\",Value=\"${FIRE_ENVIRONMENT}\"},
          {Key=\"${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}-role\",Value=base}
         ]" \
-      1> /dev/null 2>&1
+      --query "KeyMaterial" --output text \
+      > "${key_file}"
+    chmod 500 "$key_file"
+    export FIRE_PRIVATE_KEY_FILE="$key_file"
   else
     aws_exec ec2 import-key-pair \
-      --key-name "${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}:${FIRE_ENVIRONMENT}" \
+      --key-name "$key_name" \
       --public-key-material "fileb://${FIRE_PUBLIC_KEY_FILE}" \
       --tag-specifications "ResourceType=key-pair,
         Tags=[
