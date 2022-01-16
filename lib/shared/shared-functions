@@ -9,6 +9,10 @@ FIRE_BASE_SECURITY_GROUP_FILE="${FIRE_CACHE_DIR}/security_group_data"
 FIRE_BASE_INTERNET_GATEWAY_FILE="${FIRE_CACHE_DIR}/internet_gateway_data"
 FIRE_BASE_ROUTE_TABLE_FILE="${FIRE_CACHE_DIR}/route_table_data"
 
+fire_error() {
+  echo "$1" >>"${FIRE_CACHE_DIR}/error"
+}
+
 aws_exec() {
   aws --region "$FIRE_REGION" "$@"
 }
