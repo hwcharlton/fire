@@ -155,35 +155,49 @@ create_instance() {
 
 if [ -z "$(get_vpc_info vpc_id)" ]; then
   clear_vpc_information
+  echo 'Creating VPC'
   create_vpc 1> /dev/null 2>&1
+  echo "VPC created: $(get_vpc_info vpc_id)"
 fi
 
 if [ -z "$(get_subnet_info subnet_id)" ]; then
   clear_subnet_information
+  echo 'Creating subnet'
   create_subnet 1> /dev/null 2>&1
+  echo "Subnet created: $(get_subnet_info subnet_id)"
 fi
 
 if [ -z "$(get_key_pair_info key_name)" ]; then
   clear_base_key_pair_information
+  echo 'Creating key-pair'
   create_key_pair 1> /dev/null 2>&1
+  echo "Key-pair created: $(get_key_pair_info key_name)"
 fi
 
 if [ -z "$(get_security_group_info group_id)" ]; then
   clear_base_security_group_information
+  echo 'Creating security group'
   create_security_group 1> /dev/null 2>&1
+  echo "Security group created: $(get_security_group_info group_id)"
 fi
 
 if [ -z "$(get_base_instance_info instance_id)" ]; then
   clear_base_instance_information
+  echo 'Launching base instance'
   create_instance 1> /dev/null 2>&1
+  echo "Instance created: $(get_base_instance_info instance_id)"
 fi
 
 if [ -z "$(get_internet_gateway_info internet_gateway_id)" ]; then
   clear_internet_gateway_information
+  echo 'Creating internet gateway'
   create_internet_gateway 1> /dev/null 2>&1
+  echo "Internet gateway created: $(get_internet_gateway_info internet_gateway_id)"
 fi
 
 if [ -z "$(get_route_table_info route_table_id)" ]; then
   clear_route_table_information
+  echo 'Creating route table'
   create_route_table 1> /dev/null 2>&1
+  echo "Route table created: $(get_route_table_info route_table_id)"
 fi
