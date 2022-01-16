@@ -20,11 +20,15 @@ ssh_exec() {
   fi
 }
 
+scp_to_base() {
+  scp -i "$(get_key_file)" "$1" "$(get_base_instance_info public_ip):$2" 1> /dev/null 2>&1
+}
+
 wait_for_ssh() {
   local tries
   tries=0
   while [ $tries -lt 20 ]; do
-    if ssh_exec exit ; then
+    if ssh_exec exit 1> /dev/null 2>&1 ; then
       break
     fi
     sleep 5

@@ -167,6 +167,11 @@ wait_for_instance() {
   done
 }
 
+transfer_credentials() {
+  ssh_exec 'mkdir -p ~/.aws'
+  scp_to_base "$HOME/.aws/credentials" '~/.aws/credentials'
+}
+
 if [ -z "$(get_vpc_info vpc_id)" ]; then
   clear_vpc_information
   echo 'Creating VPC'
@@ -234,5 +239,11 @@ if [ -z "$(check_install fire)" ]; then
   echo 'Installing fire'
   ssh_exec -s $BIN_PATH/scripts/install/install_fire.sh
 fi
+
+if ssh_exec '[ ! -f "$HOME/.aws/credentials" ]'; then
+  echo 'Transfering credentials'
+  transfer_credentials
+fi
+
 
 echo "Instance is avaiable at: $(get_base_instance_info public_ip)"
