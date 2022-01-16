@@ -20,6 +20,23 @@ ssh_exec() {
   fi
 }
 
+wait_for_ssh() {
+  local tries
+  tries=0
+  while [ $tries -lt 20 ]; do
+    if ssh_exec exit ; then
+      break
+    fi
+    sleep 5
+  done
+}
+
+check_install() {
+  if [ -n "$(ssh_exec "command -v $1")" ]; then
+    echo "$1 is installed"
+  fi
+}
+
 get_key_file() {
   echo "${FIRE_PRIVATE_KEY_FILE:="$(get_default_key_file)"}"
 }

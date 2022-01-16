@@ -100,16 +100,16 @@ get_base_instance_info() {
   fi
   case "$1" in
     "instance_id" )
-      echo "$INSTANCE_DATA" | jp -u "InstanceId"
+      echo "$INSTANCE_DATA" | jp -u "InstanceId" | tr -d '\n'
       ;;
     "vpc_id" )
-      echo "$INSTANCE_DATA" | jp -u "VpcId"
+      echo "$INSTANCE_DATA" | jp -u "VpcId" | tr -d '\n'
       ;;
     "public_ip" )
-      echo "$INSTANCE_DATA" | jp -u "PublicIp"
+      echo "$INSTANCE_DATA" | jp -u "PublicIp" | tr -d '\n'
       ;;
     "state" )
-      echo "$INSTANCE_DATA" | jp -u "State"
+      echo "$INSTANCE_DATA" | jp -u "State" | tr -d '\n'
       ;;
   esac
 }

@@ -8,6 +8,7 @@ printf "Creating new base in: %s" "$FIRE_REGION"
 echo
 
 load_shared functions
+load_shared ssh-functions
 
 create_route_table() {
   rt_id="$(aws_exec ec2 create-route-table \
@@ -153,6 +154,19 @@ create_instance() {
     --network-interfaces AssociatePublicIpAddress=true,DeviceIndex=0
 }
 
+wait_for_instance() {
+  local tries
+  tries=0
+  while [ $tries -lt 20 ]; do
+    clear_base_instance_information
+    INSTANCE_STATE="$(get_base_instance_info state)"
+    if [ $INSTANCE_STATE = 'running' ]; then
+      break
+    fi
+    sleep 5
+  done
+}
+
 if [ -z "$(get_vpc_info vpc_id)" ]; then
   clear_vpc_information
   echo 'Creating VPC'
@@ -201,3 +215,24 @@ if [ -z "$(get_route_table_info route_table_id)" ]; then
   create_route_table 1> /dev/null 2>&1
   echo "Route table created: $(get_route_table_info route_table_id)"
 fi
+
+wait_for_instance
+
+wait_for_ssh
+
+if [ -z "$(check_install git)" ]; then
+  echo 'Installing git'
+  ssh_exec -s $BIN_PATH/scripts/install/install_git.sh
+fi
+
+if [ -z "$(check_install jp)" ]; then
+  echo 'Installing JMESPath'
+  ssh_exec -s $BIN_PATH/scripts/install/install_jp.sh
+fi
+
+if [ -z "$(check_install fire)" ]; then
+  echo 'Installing fire'
+  ssh_exec -s $BIN_PATH/scripts/install/install_fire.sh
+fi
+
+echo "Instance is avaiable at: $(get_base_instance_info public_ip)"
