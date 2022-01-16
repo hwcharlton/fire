@@ -1,0 +1,33 @@
+#!/bin/sh
+set -e
+
+if [ "$(type -t get_base_instance_info)" != 'function' ]; then
+  fire_error "Cannot load ssh-functions dependency."
+  fire_error "\"functions\" dependency must be loaded first."
+  exit 1
+fi
+
+ssh_exec() {
+  if [ "$1" = '-s' ]; then
+    shift
+    local script_flag
+    script_flag=1
+  fi
+  if [ "$script_flag" = '1' ]; then
+    ssh -o 'StrictHostKeyChecking=no' -i "$(get_key_file)" "$(get_base_instance_info public_ip)" 'bash -s' -- < "$1" $@
+  else
+    ssh -o 'StrictHostKeyChecking=no' -i "$(get_key_file)" "$(get_base_instance_info public_ip)" "$@"
+  fi
+}
+
+get_key_file() {
+  echo "${FIRE_PRIVATE_KEY_FILE:="$(get_default_key_file)"}"
+}
+
+get_key_name() {
+  echo "${FIRE_PROJECT}:${FIRE_PROGRAM_NAME}:${FIRE_ENVIRONMENT}"
+}
+
+get_default_key_file() {
+  echo "${FIRE_BASE_DIRECTORY}/keys/${FIRE_REGION}/$(get_key_name | tr ':' '_').pem"
+}
